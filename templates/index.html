@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Search</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            transition: 0.3s;
+        }
+
+        .light { background: #f8f9fa; color: black; }
+        .dark { background: #121212; color: white; }
+
+        .container {
+            max-width: 900px;
+            margin: 80px auto;
+            padding: 0 15px;
+        }
+
+        h1 { text-align: center; }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            position: relative;
+            margin-top: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 14px;
+            border-radius: 30px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            background: #1a73e8;
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .tabs span {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .tabs .active {
+            border-bottom: 3px solid #1a73e8;
+            color: #1a73e8;
+        }
+
+        /* Results */
+        .results {
+            margin-top: 20px;
+        }
+
+        .result {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+        }
+
+        .dark .result { background: #1e1e1e; }
+
+        .result a {
+            font-size: 18px;
+            color: #1a0dab;
+            text-decoration: none;
+        }
+
+        .dark .result a { color: #8ab4f8; }
+
+        .result p { margin-top: 5px; }
+
+        /* Image grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .img-card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        /* Video grid */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .video-card {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .dark .video-card { background: #1e1e1e; }
+
+        .video-thumb {
+            position: relative;
+        }
+
+        .video-thumb img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 12px;
+            border-radius: 50%;
+        }
+
+        /* Suggestions */
+        .suggestions {
+            position: absolute;
+            top: 55px;
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .dark .suggestions { background: #2a2a2a; }
+
+        .suggestions div {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .suggestions div:hover {
+            background: #eee;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner div {
+            width: 30px;
+            height: 30px;
+            border: 4px solid #ccc;
+            border-top: 4px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* History */
+        .history {
+            margin-top: 10px;
+        }
+
+        .history span {
+            background: #ddd;
+            padding: 6px 12px;
+            margin: 5px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
+        .dark .history span { background: #444; }
+
+        .toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+    </style>
+</head>
+
+<body class="light">
+
+<button class="toggle" onclick="toggleTheme()">🌙</button>
+
+<div class="container">
+    <h1>🔍 Smart Search</h1>
+
+    <div class="search-box">
+        <input id="searchInput" placeholder="Search..." oninput="handleInput()">
+        <button onclick="manualSearch()">Search</button>
+        <div id="suggestions" class="suggestions"></div>
+    </div>
+
+    <div class="history" id="history"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <span id="tab-all" class="active" onclick="changeTab('all')">All</span>
+        <span id="tab-images" onclick="changeTab('images')">Images</span>
+        <span id="tab-videos" onclick="changeTab('videos')">Videos</span>
+    </div>
+
+    <div class="spinner" id="spinner"><div></div></div>
+
+    <div class="results" id="results"></div>
+</div>
+
+<script>
+let timeout = null;
+let currentType = "all";
+
+function toggleTheme() {
+    document.body.classList.toggle("dark");
+    document.body.classList.toggle("light");
+}
+
+function handleInput() {
+    const query = document.getElementById("searchInput").value;
+    clearTimeout(timeout);
+
+    if (!query) return;
+
+    timeout = setTimeout(() => {
+        fetch(`/api/suggest?q=${query}`)
+        .then(res => res.json())
+        .then(data => {
+            let html = "";
+            data.forEach(s => {
+                html += `<div onclick="selectSuggestion('${s}')">${s}</div>`;
+            });
+            document.getElementById("suggestions").innerHTML = html;
+        });
+    }, 300);
+}
+
+function manualSearch() {
+    const query = document.getElementById("searchInput").value;
+    if (!query) return;
+
+    document.getElementById("spinner").style.display = "block";
+
+    fetch(`/api/search?q=${query}&type=${currentType}`)
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+
+        if (currentType === "images") {
+            html += `<div class="image-grid">`;
+            data.forEach(item => {
+                html += `<div class="img-card"><img src="${item.image}"></div>`;
+            });
+            html += `</div>`;
+        }
+        else if (currentType === "videos") {
+            html += `<div class="video-grid">`;
+            data.forEach(item => {
+                html += `
+                    <div class="video-card">
+                        <div class="video-thumb">
+                            <img src="${item.thumbnail}" />
+                            <div class="play-btn">▶</div>
+                        </div>
+                        <a href="${item.url}" target="_blank">${item.title}</a>
+                        <p>${item.content || ""}</p>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+        else {
+            data.forEach(item => {
+                html += `
+                    <div class="result">
+                        <a href="${item.url}" target="_blank">${item.title}</a>
+                        <p>${item.content || ""}</p>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById("results").innerHTML = html;
+        document.getElementById("spinner").style.display = "none";
+    });
+
+    document.getElementById("suggestions").innerHTML = "";
+    saveHistory(query);
+}
+
+function changeTab(type) {
+    currentType = type;
+    document.querySelectorAll(".tabs span").forEach(t => t.classList.remove("active"));
+    document.getElementById("tab-" + type).classList.add("active");
+    manualSearch();
+}
+
+function selectSuggestion(text) {
+    document.getElementById("searchInput").value = text;
+    manualSearch();
+}
+
+function saveHistory(query) {
+    let history = JSON.parse(localStorage.getItem("history")) || [];
+    if (!history.includes(query)) {
+        history.unshift(query);
+        history = history.slice(0, 5);
+        localStorage.setItem("history", JSON.stringify(history));
+    }
+    showHistory();
+}
+
+function showHistory() {
+    let history = JSON.parse(localStorage.getItem("history")) || [];
+    let html = "<b>Recent:</b><br>";
+    history.forEach(h => {
+        html += `<span onclick="selectHistory('${h}')">${h}</span>`;
+    });
+    document.getElementById("history").innerHTML = html;
+}
+
+function selectHistory(text) {
+    document.getElementById("searchInput").value = text;
+    manualSearch();
+}
+
+document.getElementById("searchInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        manualSearch();
+    }
+});
+
+showHistory();
+</script>
+
+</body>
+</html>
