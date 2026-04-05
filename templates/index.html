@@ -203,6 +203,22 @@
 <button class="toggle" onclick="toggleTheme()">🌙</button>
 
 <div class="container">
+    <div style="
+    position:absolute;
+    top:20px;
+    right:20px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:white;
+    padding:8px 12px;
+    border-radius:20px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+">
+    <img src="{{ user.picture }}" style="width:30px; height:30px; border-radius:50%;">
+    <span>{{ user.name }}</span>
+    <a href="/logout" style="margin-left:10px; color:red;">Logout</a>
+</div>
     <h1>🔍 Smart Search</h1>
 
     <div class="search-box">
