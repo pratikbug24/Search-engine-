@@ -61,15 +61,11 @@ Create a `.env` file:
 - Dark Mode
 
 <p align="center">
-  <img src="images/screen1.png" width="45%" />
-  <img src="images/screen2.png" width="45%" />
+  <h4>Home</h4>
+  <img src="images/screen1.png" />
+  <h4>Search</h4>
+  <img src="images/screen2.png" />
 </p>
-
-<p align="center">
-  <b>Home Page</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <b>Search Results</b>
-</p>
-
 ---
 
 ## ⚠️ Notes
