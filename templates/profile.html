@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile - Smart Search</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            transition: 0.3s;
+        }
+
+        .light { background: #f8f9fa; color: black; }
+        .dark { background: #121212; color: white; }
+
+        .container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .dark .profile-card { background: #1e1e1e; }
+
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #1a73e8;
+            margin-bottom: 20px;
+        }
+
+        .profile-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .profile-email {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .dark .profile-email { color: #aaa; }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dark .stats { border-color: #333; }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a73e8;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .dark .stat-label { color: #aaa; }
+
+        .menu {
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: #f5f5f5;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .dark .menu-item { background: #2a2a2a; }
+
+        .menu-item:hover {
+            background: #e8e8e8;
+            transform: translateX(5px);
+        }
+
+        .dark .menu-item:hover { background: #3a3a3a; }
+
+        .menu-icon {
+            font-size: 20px;
+            margin-right: 15px;
+            width: 30px;
+        }
+
+        .menu-text {
+            flex: 1;
+        }
+
+        .menu-arrow {
+            color: #666;
+        }
+
+        .dark .menu-arrow { color: #aaa; }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .dark .theme-toggle { background: #2a2a2a; color: white; }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        .user-since {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body class="light">
+
+<a href="/" class="back-link">← Back to Search</a>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+<div class="container">
+    <div class="profile-card">
+        <img src="{{ user.picture }}" alt="Profile" class="profile-img">
+        
+        <div class="profile-name">{{ user.name }}</div>
+        <div class="profile-email">{{ user.email }}</div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="searchCount">0</div>
+                <div class="stat-label">Searches</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="historyCount">0</div>
+                <div class="stat-label">History</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="favoritesCount">0</div>
+                <div class="stat-label">Favorites</div>
+            </div>
+        </div>
+
+        <div class="menu">
+            <div class="menu-item">
+                <span class="menu-icon">✏️</span>
+                <a href="/edit-profile" class="menu-text" style="text-decoration:none; color:inherit; flex:1;">Edit Profile</a>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="showHistory()">
+                <span class="menu-icon">🕒</span>
+                <span class="menu-text">Search History</span>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="showFavorites()">
+                <span class="menu-icon">⭐</span>
+                <span class="menu-text">Saved Favorites</span>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">⚙️</span>
+                <a href="/settings" class="menu-text" style="text-decoration:none; color:inherit; flex:1;">Settings</a>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item" onclick="showAbout()">
+                <span class="menu-icon">ℹ️</span>
+                <span class="menu-text">About</span>
+                <span class="menu-arrow">›</span>
+            </div>
+        </div>
+
+        <a href="/logout">
+            <button class="logout-btn">Logout</button>
+        </a>
+
+        <div class="user-since">Member since 2024</div>
+    </div>
+</div>
+
+<!-- Hidden sections for menu actions -->
+<div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+    <div style="background:white; max-width:600px; margin:100px auto; padding:0; border-radius:15px; max-height:500px; overflow:hidden;">
+        <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0; font-size:20px;">Search History</h2>
+            <span onclick="closeModal('historyModal')" style="cursor:pointer; font-size:24px; color:#666;">&times;</span>
+        </div>
+        <div id="historyList" style="max-height:380px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<script>
+    // Load stats from localStorage
+    const searches = JSON.parse(localStorage.getItem("searchCount")) || 0;
+    const history = JSON.parse(localStorage.getItem("history")) || [];
+    const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+    document.getElementById("searchCount").textContent = searches;
+    document.getElementById("historyCount").textContent = history.length;
+    document.getElementById("favoritesCount").textContent = favorites.length;
+
+    function toggleTheme() {
+        document.body.classList.toggle("dark");
+        document.body.classList.toggle("light");
+        localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    }
+
+    // Load saved theme
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.remove("light");
+        document.body.classList.add("dark");
+    }
+
+    function showHistory() {
+        const history = JSON.parse(localStorage.getItem("history")) || [];
+        const list = document.getElementById("historyList");
+        
+        if (history.length === 0) {
+            list.innerHTML = '<div style="padding:40px; text-align:center; color:#666;">No search history yet.<br><small style="color:#999;">Your recent searches will appear here</small></div>';
+        } else {
+            list.innerHTML = history.map((h, index) => {
+                const timeAgo = getTimeAgo(h.timestamp);
+                return `
+                <div style="display:flex; align-items:center; padding:12px 20px; border-bottom:1px solid #f0f0f0; cursor:pointer;" 
+                     onmouseover="this.style.background='#f5f5f5'" 
+                     onmouseout="this.style.background='white'"
+                     onclick="window.location.href='${h.url || '/?q=' + encodeURIComponent(h.query)}'">
+                    <span style="color:#888; margin-right:15px; font-size:18px;">🕒</span>
+                    <div style="flex:1; display:flex; flex-direction:column;">
+                        <span>${h.query}</span>
+                        <span style="font-size:12px; color:#888;">${timeAgo}</span>
+                    </div>
+                    <span style="color:#ccc; padding:5px; cursor:pointer; border-radius:50%;" 
+                          onclick="event.stopPropagation(); deleteHistoryItem(${index})">✕</span>
+                </div>
+                `;
+            }).join('');
+            
+            list.innerHTML += `
+                <div style="padding:15px; text-align:center; border-top:1px solid #eee;">
+                    <span style="color:#1a73e8; cursor:pointer; font-size:14px;" onclick="clearAllHistory()">Clear all</span>
+                </div>
+            `;
+        }
+        
+        document.getElementById("historyModal").style.display = "block";
+    }
+
+    function getTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return minutes + ' min ago';
+        if (hours < 24) return hours + ' hour' + (hours > 1 ? 's' : '') + ' ago';
+        if (days < 7) return days + ' day' + (days > 1 ? 's' : '') + ' ago';
+        return new Date(timestamp).toLocaleDateString();
+    }
+
+    function searchFromHistory(query) {
+        window.location.href = '/?q=' + encodeURIComponent(query);
+    }
+
+    function deleteHistoryItem(index) {
+        let history = JSON.parse(localStorage.getItem("history")) || [];
+        history.splice(index, 1);
+        localStorage.setItem("history", JSON.stringify(history));
+        updateStats();
+        showHistory();
+    }
+
+    function clearAllHistory() {
+        localStorage.removeItem("history");
+        updateStats();
+        showHistory();
+    }
+
+    function updateStats() {
+        const history = JSON.parse(localStorage.getItem("history")) || [];
+        document.getElementById("historyCount").textContent = history.length;
+    }
+
+    function showFavorites() {
+        const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+        
+        if (favorites.length === 0) {
+            alert("No favorites saved yet!");
+        } else {
+            alert("Favorites: " + favorites.join(", "));
+        }
+    }
+
+    function showAbout() {
+        alert("Smart Search v1.0\nMade with ❤️");
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+    }
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+        if (event.target.classList.contains("modal")) {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>

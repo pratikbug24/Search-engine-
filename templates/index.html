@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2644619789277551"
+     crossorigin="anonymous"></script>
     <title>Smart Search</title>
     <style>
         body {
@@ -178,17 +180,108 @@
         /* History */
         .history {
             margin-top: 10px;
+            display: none; /* Hidden by default, show on focus */
+            position: absolute;
+            width: 100%;
+            max-width: 580px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 100;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
-        .history span {
-            background: #ddd;
-            padding: 6px 12px;
-            margin: 5px;
-            border-radius: 15px;
+        .dark .history { background: #2a2a2a; }
+
+        .history.show { display: block; }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
             cursor: pointer;
+            transition: 0.2s;
         }
 
-        .dark .history span { background: #444; }
+        .history-item:hover {
+            background: #f0f0f0;
+        }
+
+        .dark .history-item:hover { background: #3a3a3a; }
+
+        .history-icon {
+            color: #888;
+            margin-right: 15px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .dark .history-icon { color: #aaa; }
+
+        .history-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-text {
+            font-size: 16px;
+        }
+
+        .history-time {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .dark .history-time { color: #aaa; }
+
+        .history-delete {
+            color: #ccc;
+            font-size: 18px;
+            padding: 5px 10px;
+            border-radius: 50%;
+            opacity: 0;
+            transition: 0.2s;
+        }
+
+        .history-item:hover .history-delete {
+            opacity: 1;
+        }
+
+        .history-delete:hover {
+            background: #eee;
+            color: #666;
+        }
+
+        .dark .history-delete:hover { background: #444; color: #fff; }
+
+        .history-header {
+            padding: 10px 15px;
+            color: #666;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dark .history-header { border-color: #444; color: #aaa; }
+
+        .history-clear {
+            padding: 10px 15px;
+            color: #1a73e8;
+            font-size: 14px;
+            cursor: pointer;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+
+        .dark .history-clear { border-color: #444; }
+
+        .history-clear:hover {
+            background: #f5f5f5;
+        }
+
+        .dark .history-clear:hover { background: #3a3a3a; }
 
         .toggle {
             position: absolute;
@@ -216,18 +309,29 @@
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 ">
     <img src="{{ user.picture }}" style="width:30px; height:30px; border-radius:50%;">
-    <span>{{ user.name }}</span>
+    <a href="/profile" style="text-decoration:none; color:inherit;">{{ user.name }}</a>
     <a href="/logout" style="margin-left:10px; color:red;">Logout</a>
 </div>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2644619789277551"
+     crossorigin="anonymous"></script>
+<!-- Ads -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-2644619789277551"
+     data-ad-slot="7142805687"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
     <h1>🔍 Smart Search</h1>
 
     <div class="search-box">
-        <input id="searchInput" placeholder="Search..." oninput="handleInput()">
+        <input id="searchInput" placeholder="Search..." oninput="handleInput()" onfocus="showHistoryDropdown()">
         <button onclick="manualSearch()">Search</button>
         <div id="suggestions" class="suggestions"></div>
+        <div id="history" class="history"></div>
     </div>
-
-    <div class="history" id="history"></div>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -336,27 +440,108 @@ function selectSuggestion(text) {
 
 function saveHistory(query) {
     let history = JSON.parse(localStorage.getItem("history")) || [];
-    if (!history.includes(query)) {
-        history.unshift(query);
-        history = history.slice(0, 5);
-        localStorage.setItem("history", JSON.stringify(history));
-    }
+    // Remove if exists to move to top
+    history = history.filter(h => h.query !== query);
+    
+    // Add new entry with timestamp
+    history.unshift({
+        query: query,
+        timestamp: Date.now(),
+        url: '/?q=' + encodeURIComponent(query)
+    });
+    
+    history = history.slice(0, 10); // Keep up to 10 items
+    localStorage.setItem("history", JSON.stringify(history));
     showHistory();
 }
 
 function showHistory() {
     let history = JSON.parse(localStorage.getItem("history")) || [];
-    let html = "<b>Recent:</b><br>";
-    history.forEach(h => {
-        html += `<span onclick="selectHistory('${h}')">${h}</span>`;
+    const historyDiv = document.getElementById("history");
+    
+    if (history.length === 0) {
+        historyDiv.classList.remove("show");
+        return;
+    }
+    
+    let html = `<div class="history-header">Recent searches</div>`;
+    history.forEach((h, index) => {
+        const timeAgo = getTimeAgo(h.timestamp);
+        html += `
+            <div class="history-item" onclick="selectHistory('${h.query.replace(/'/g, "\\'")}')">
+                <span class="history-icon">🕒</span>
+                <div class="history-content">
+                    <span class="history-text">${h.query}</span>
+                    <span class="history-time">${timeAgo}</span>
+                </div>
+                <span class="history-delete" onclick="event.stopPropagation(); deleteHistory(${index})">✕</span>
+            </div>
+        `;
     });
-    document.getElementById("history").innerHTML = html;
+    html += `<div class="history-clear" onclick="clearHistory()">Clear all</div>`;
+    
+    historyDiv.innerHTML = html;
+}
+
+function getTimeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return minutes + ' min ago';
+    if (hours < 24) return hours + ' hour' + (hours > 1 ? 's' : '') + ' ago';
+    if (days < 7) return days + ' day' + (days > 1 ? 's' : '') + ' ago';
+    return new Date(timestamp).toLocaleDateString();
+}
+
+function showHistoryDropdown() {
+    const history = JSON.parse(localStorage.getItem("history")) || [];
+    if (history.length > 0) {
+        const input = document.getElementById("searchInput").value;
+        if (!input) {
+            showHistory();
+            document.getElementById("history").classList.add("show");
+        }
+    }
 }
 
 function selectHistory(text) {
     document.getElementById("searchInput").value = text;
+    document.getElementById("history").classList.remove("show");
     manualSearch();
 }
+
+function deleteHistory(index) {
+    let history = JSON.parse(localStorage.getItem("history")) || [];
+    history.splice(index, 1);
+    localStorage.setItem("history", JSON.stringify(history));
+    showHistory();
+}
+
+function clearHistory() {
+    localStorage.removeItem("history");
+    document.getElementById("history").classList.remove("show");
+    document.getElementById("history").innerHTML = "";
+}
+
+function selectHistory(text) {
+    document.getElementById("searchInput").value = text;
+    document.getElementById("history").classList.remove("show");
+    manualSearch();
+}
+
+// Close history when clicking outside
+document.addEventListener('click', function(e) {
+    const searchBox = document.querySelector('.search-box');
+    const history = document.getElementById("history");
+    if (!searchBox.contains(e.target)) {
+        history.classList.remove("show");
+    }
+});
 
 document.getElementById("searchInput").addEventListener("keypress", function(e) {
     if (e.key === "Enter") {

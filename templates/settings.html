@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings - Smart Search</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            transition: 0.3s;
+        }
+
+        .light { background: #f8f9fa; color: black; }
+        .dark { background: #121212; color: white; }
+
+        .container {
+            max-width: 700px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .dark .settings-card { background: #1e1e1e; }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #1a73e8;
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dark .settings-section { border-color: #333; }
+
+        .settings-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .dark .settings-section h2 { color: #ddd; }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .setting-label {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-label span:first-child {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .setting-label span:last-child {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .dark .setting-label span:last-child { color: #aaa; }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #1a73e8;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Select dropdown */
+        select {
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .dark select { 
+            background: #2a2a2a; 
+            color: white; 
+            border-color: #444;
+        }
+
+        /* Theme selector */
+        .theme-options {
+            display: flex;
+            gap: 15px;
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .theme-option.active {
+            border-color: #1a73e8;
+            background: rgba(26, 115, 232, 0.1);
+        }
+
+        .theme-option input {
+            display: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+            transition: 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        .dark .btn-secondary { 
+            background: #2a2a2a; 
+            color: #ddd;
+            border-color: #444;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .dark .theme-toggle { background: #2a2a2a; color: white; }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body class="light">
+
+<a href="/profile" class="back-link">← Back to Profile</a>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+<div class="container">
+    <div class="settings-card">
+        <h1>⚙️ Settings</h1>
+
+        {% if success %}
+        <div class="success-msg">Settings saved successfully!</div>
+        {% endif %}
+
+        <form method="POST" action="/settings">
+            
+            <!-- Appearance Section -->
+            <div class="settings-section">
+                <h2>🎨 Appearance</h2>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Theme</span>
+                        <span>Choose your preferred color scheme</span>
+                    </div>
+                    <div class="theme-options">
+                        <label class="theme-option {% if settings.theme == 'light' %}active{% endif %}">
+                            <input type="radio" name="theme" value="light" {% if settings.theme == 'light' %}checked{% endif %}>
+                            ☀️ Light
+                        </label>
+                        <label class="theme-option {% if settings.theme == 'dark' %}active{% endif %}">
+                            <input type="radio" name="theme" value="dark" {% if settings.theme == 'dark' %}checked{% endif %}>
+                            🌙 Dark
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Language</span>
+                        <span>Set your preferred language</span>
+                    </div>
+                    <select name="language">
+                        <option value="en" {% if settings.language == 'en' %}selected{% endif %}>English</option>
+                        <option value="es" {% if settings.language == 'es' %}selected{% endif %}>Español</option>
+                        <option value="fr" {% if settings.language == 'fr' %}selected{% endif %}>Français</option>
+                        <option value="de" {% if settings.language == 'de' %}selected{% endif %}>Deutsch</option>
+                        <option value="zh" {% if settings.language == 'zh' %}selected{% endif %}>中文</option>
+                        <option value="ja" {% if settings.language == 'ja' %}selected{% endif %}>日本語</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="settings-section">
+                <h2>🔍 Search</h2>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Search Suggestions</span>
+                        <span>Show search suggestions while typing</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="search_suggestions" {% if settings.search_suggestions == 'on' %}checked{% endif %}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Search History</span>
+                        <span>Save your search history for quick access</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="search_history" {% if settings.search_history == 'on' %}checked{% endif %}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Auto-correct</span>
+                        <span>Automatically correct spelling mistakes</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="auto_correct" {% if settings.auto_correct == 'on' %}checked{% endif %}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Safe Search</span>
+                        <span>Filter explicit results from search</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="safe_search" {% if settings.safe_search == 'on' %}checked{% endif %}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Account Section -->
+            <div class="settings-section">
+                <h2>👤 Account</h2>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Logged in as</span>
+                        <span>{{ user.name }}</span>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Email</span>
+                        <span>{{ user.email }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+                <a href="/profile" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleTheme() {
+        document.body.classList.toggle("dark");
+        document.body.classList.toggle("light");
+        localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    }
+
+    // Load saved theme
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.remove("light");
+        document.body.classList.add("dark");
+    }
+
+    // Theme option click handling
+    document.querySelectorAll('.theme-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+            this.querySelector('input').checked = true;
+        });
+    });
+
+    // Apply saved settings on load
+    window.addEventListener('load', function() {
+        const settings = JSON.parse(localStorage.getItem('userSettings')) || {};
+        if (settings.theme === 'dark') {
+            document.body.classList.remove('light');
+            document.body.classList.add('dark');
+        }
+    });
+</script>
+
+</body>
+</html>

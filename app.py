@@ -117,6 +117,64 @@ def profile():
         return redirect('/login')
     return render_template('profile.html', user=user)
 
+# ================== ✏️ EDIT PROFILE ==================
+@app.route('/edit-profile', methods=['GET', 'POST'])
+def edit_profile():
+    user = session.get('user')
+    if not user:
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        
+        # Update user session
+        user['name'] = name
+        user['email'] = email
+        session['user'] = user
+        
+        # Update in database if it's a manual login
+        if 'manual@login.com' in user.get('email', ''):
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute("UPDATE users SET username=? WHERE username=?", (name, user.get('original_name', name)))
+            conn.commit()
+            conn.close()
+        
+        return redirect('/profile')
+    
+    user['original_name'] = user.get('name')
+    return render_template('edit_profile.html', user=user)
+
+# ================== ⚙️ SETTINGS ==================
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    user = session.get('user')
+    if not user:
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        # Save settings to session/localStorage
+        session['settings'] = {
+            'theme': request.form.get('theme', 'light'),
+            'search_suggestions': request.form.get('search_suggestions', 'on'),
+            'search_history': request.form.get('search_history', 'on'),
+            'auto_correct': request.form.get('auto_correct', 'on'),
+            'safe_search': request.form.get('safe_search', 'on'),
+            'language': request.form.get('language', 'en'),
+        }
+        return redirect('/settings')
+    
+    user_settings = session.get('settings', {
+        'theme': 'light',
+        'search_suggestions': 'on',
+        'search_history': 'on',
+        'auto_correct': 'on',
+        'safe_search': 'on',
+        'language': 'en'
+    })
+    return render_template('settings.html', user=user, settings=user_settings)
+
 # ================== 🚪 LOGOUT ==================
 @app.route('/logout')
 def logout():
