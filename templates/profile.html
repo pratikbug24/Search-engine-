@@ -212,6 +212,19 @@
                 <span class="menu-text">Search History</span>
                 <span class="menu-arrow">›</span>
             </div>
+            <!-- ⭐ Favorites Modal -->
+<div id="favoritesModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+    <div style="background:white; max-width:600px; margin:100px auto; padding:0; border-radius:15px; max-height:500px; overflow:hidden;">
+        
+        <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0; font-size:20px;">⭐ Favorites</h2>
+            <span onclick="closeModal('favoritesModal')" style="cursor:pointer; font-size:24px;">&times;</span>
+        </div>
+
+        <div id="favoritesList" style="max-height:380px; overflow-y:auto;"></div>
+
+    </div>
+</div>
             <div class="menu-item" onclick="showFavorites()">
                 <span class="menu-icon">⭐</span>
                 <span class="menu-text">Saved Favorites</span>
@@ -344,14 +357,49 @@
     }
 
     function showFavorites() {
-        const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-        
-        if (favorites.length === 0) {
-            alert("No favorites saved yet!");
+    fetch('/api/favorites')
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+
+        if (data.length === 0) {
+            html = `
+                <div style="padding:40px; text-align:center; color:#666;">
+                    No favorites yet ⭐<br>
+                    <small style="color:#999;">Save items from search</small>
+                </div>
+            `;
         } else {
-            alert("Favorites: " + favorites.join(", "));
+            data.forEach(item => {
+                html += `
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    padding:12px 20px;
+                    border-bottom:1px solid #f0f0f0;
+                ">
+                    <span style="margin-right:10px;">⭐</span>
+
+                    <a href="${item.url}" target="_blank" style="flex:1; text-decoration:none; color:#1a0dab;">
+                        ${item.title}
+                    </a>
+
+                    <span style="
+                        color:#ccc;
+                        cursor:pointer;
+                        padding:5px;
+                        border-radius:50%;
+                    "
+                    onclick="deleteFavorite(${item.id})">✕</span>
+                </div>
+                `;
+            });
         }
-    }
+
+        document.getElementById("favoritesList").innerHTML = html;
+        document.getElementById("favoritesModal").style.display = "block";
+    });
+}
 
     function showAbout() {
         alert("Smart Search v1.0\nMade with ❤️");
@@ -367,6 +415,76 @@
             event.target.style.display = "none";
         }
     }
+
+    function loadFavorites() {
+    fetch('/api/favorites')
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+
+        if (data.length === 0) {
+            html = "<p>No favorites yet</p>";
+        } else {
+            data.forEach(item => {
+                html += `
+                    <div style="
+                        background:#fff;
+                        padding:10px;
+                        margin:10px 0;
+                        border-radius:8px;
+                    ">
+                        <a href="${item.url}" target="_blank">${item.title}</a>
+                        <button onclick="deleteFavorite(${item.id})">❌</button>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById("favoritesList").innerHTML = html;
+    });
+}
+
+function deleteFavorite(id) {
+    fetch(`/api/favorite/${id}`, { method: 'DELETE' })
+    .then(() => loadFavorites());
+}
+
+loadFavorites();
+
+function deleteFavorite(id) {
+    fetch(`/api/favorite/${id}`, { method: 'DELETE' })
+    .then(() => showFavorites()); // reload modal
+}
+
+function removeFavorite(index) {
+    let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+    favorites.splice(index, 1);
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+
+    updateFavoritesCount();
+    showFavorites(); // refresh UI
+}
+
+function loadFavoritesCount() {
+    fetch('/api/favorites/count')
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("favoritesCount").innerText = data.count;
+    });
+}
+
+loadFavoritesCount();
+
+function loadSearchCount() {
+    fetch('/api/search/count')
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("searchCount").innerText = data.count;
+    });
+}
+
+// call it
+loadSearchCount();
 </script>
 
 </body>

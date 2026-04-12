@@ -285,6 +285,113 @@ def ai_summary():
     except Exception as e:
         print("ERROR:", e)
         return jsonify({"answer": "AI service error"})
+    
+    # ================== ⭐ FAVORITES ==================
+
+def init_favorites_db():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS favorites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            title TEXT,
+            url TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_favorites_db()
+
+
+# ➕ Add to favorites
+@app.route('/api/favorite', methods=['POST'])
+def add_favorite():
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Not logged in"}), 401
+
+    data = request.json
+    title = data.get("title")
+    url = data.get("url")
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO favorites (username, title, url) VALUES (?, ?, ?)",
+        (user['name'], title, url)
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Added to favorites"})
+
+
+# 📄 Get favorites
+@app.route('/api/favorites')
+def get_favorites():
+    user = session.get('user')
+    if not user:
+        return jsonify([])
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT id, title, url FROM favorites WHERE username=?", (user['name'],))
+    data = c.fetchall()
+    conn.close()
+
+    favorites = [
+        {"id": row[0], "title": row[1], "url": row[2]}
+        for row in data
+    ]
+
+    return jsonify(favorites)
+
+
+# ❌ Delete favorite
+@app.route('/api/favorite/<int:id>', methods=['DELETE'])
+def delete_favorite(id):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM favorites WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Deleted"})
+
+@app.route('/api/favorites/count')
+def favorites_count():
+    user = session.get('user')
+    if not user:
+        return jsonify({"count": 0})
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+
+    c.execute("SELECT COUNT(*) FROM favorites WHERE username=?", (user['name'],))
+    count = c.fetchone()[0]
+
+    conn.close()
+
+
+    return jsonify({"count": count})
+
+@app.route('/api/search/count')
+def search_count():
+    user = session.get('user')
+    if not user:
+        return jsonify({"count": 0})
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+
+    c.execute("SELECT COUNT(*) FROM searches WHERE username=?", (user['name'],))
+    count = c.fetchone()[0]
+
+    conn.close()
+
+    return jsonify({"count": count})
 # ================== 🚀 RUN ==================
 if __name__ == '__main__':
     app.run(debug=True)
