@@ -1,11 +1,16 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from authlib.integrations.flask_client import OAuth
 from serpapi import GoogleSearch
-from dotenv import load_dotenv
 import sqlite3
+import requests
 import os
-
+from dotenv import load_dotenv
 load_dotenv()
+HF_API_KEY = os.getenv("HF_API_KEY")
+
+if not HF_API_KEY:
+    raise ValueError("❌ HF_API_KEY not found in .env")
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY") or "supersecretkey"
@@ -248,6 +253,38 @@ def suggest():
 
     return jsonify(suggestions)
 
+
+@app.route('/api/ai-summary')
+def ai_summary():
+    query = request.args.get('q')
+
+    try:
+        response = requests.post(
+            "https://api-inference.huggingface.co/models/google/flan-t5-large",
+            headers={
+                "Authorization": f"Bearer {HF_API_KEY}"
+            },
+            json={
+                "inputs": f"Answer this clearly in 2 lines: {query}",
+                "options": {"wait_for_model": True}
+            }
+        )
+
+        data = response.json()   # ✅ IMPORTANT
+
+        # ✅ Success case
+        if isinstance(data, list):
+            return jsonify({"answer": data[0].get("generated_text", "")})
+
+        # ✅ Error case
+        if isinstance(data, dict) and "error" in data:
+            return jsonify({"answer": "⚠️ AI not available right now"})
+
+        return jsonify({"answer": "No response from AI"})
+
+    except Exception as e:
+        print("ERROR:", e)
+        return jsonify({"answer": "AI service error"})
 # ================== 🚀 RUN ==================
 if __name__ == '__main__':
     app.run(debug=True)

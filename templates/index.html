@@ -286,8 +286,80 @@
         .toggle {
             position: absolute;
             top: 20px;
-            right: 20px;
         }
+
+        .mic-btn {
+            background: #34a853;
+            border-radius: 50%;
+            padding: 12px;
+        }
+
+        .mic-btn.listening {
+            background: red;
+            animation: pulse 1s infinite;
+        }
+
+        .ai-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ai-spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #ccc;
+    border-top: 3px solid #1a73e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.hamburger {
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.hamburger:hover {
+    background: #eee;
+}
+
+.menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    overflow: hidden;
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.menu-dropdown a {
+    display: block;
+    padding: 10px;
+    text-decoration: none;
+    color: black;
+}
+
+.menu-dropdown a:hover {
+    background: #f5f5f5;
+}
+
+.dark .menu-dropdown {
+    background: #2a2a2a;
+}
+
+.dark .menu-dropdown a {
+    color: white;
+}
+
+.dark .menu-dropdown a:hover {
+    background: #3a3a3a;
+}
     </style>
 </head>
 
@@ -308,14 +380,43 @@
     border-radius:20px;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 ">
-    <img src="{{ user.picture }}" style="width:30px; height:30px; border-radius:50%;">
-    <a href="/profile" style="text-decoration:none; color:inherit;">{{ user.name }}</a>
-    <a href="/logout" style="margin-left:10px; color:red;">Logout</a>
+   <!-- 🔝 Top Right User Menu -->
+<div style="
+position:absolute;
+top:20px;
+right:20px;
+display:flex;
+align-items:center;
+gap:10px;
+background:white;
+padding:8px 12px;
+border-radius:20px;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+">
+
+<img src="{{ user.picture }}" style="width:30px; height:30px; border-radius:50%;">
+
+<a href="/profile" style="text-decoration:none; color:inherit;">
+    {{ user.name }}
+</a>
+
+<!-- 🍔 Hamburger -->
+<div class="hamburger" onclick="toggleMenu()">☰</div>
+
+<!-- Dropdown -->
+<div id="menuDropdown" class="menu-dropdown">
+    <a href="/profile">👤 Profile</a>
+    <a href="/settings">⚙️ Settings</a>
+    <a href="/logout" style="color:red;">🚪 Logout</a>
 </div>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2644619789277551"
-     crossorigin="anonymous"></script>
+
+</div>
+    <!-- <a href="/logout" style="margin-left:10px; color:red;">Logout</a> -->
+</div>
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2644619789277551"
+     crossorigin="anonymous"></script> -->
 <!-- Ads -->
-<ins class="adsbygoogle"
+<!-- <ins class="adsbygoogle"
      style="display:block"
      data-ad-client="ca-pub-2644619789277551"
      data-ad-slot="7142805687"
@@ -323,16 +424,17 @@
      data-full-width-responsive="true"></ins>
 <script>
      (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
+</script> -->
     <h1>🔍 Smart Search</h1>
 
     <div class="search-box">
         <input id="searchInput" placeholder="Search..." oninput="handleInput()" onfocus="showHistoryDropdown()">
+        <button class="mic-btn" id="micBtn" onclick="startVoice()">🎤</button>
         <button onclick="manualSearch()">Search</button>
         <div id="suggestions" class="suggestions"></div>
         <div id="history" class="history"></div>
     </div>
-
+    <!-- <ul id="results"></ul> -->
     <!-- Tabs -->
     <div class="tabs">
         <span id="tab-all" class="active" onclick="changeTab('all')">All</span>
@@ -341,6 +443,18 @@
     </div>
 
     <div class="spinner" id="spinner"><div></div></div>
+
+    <div id="aiBox" style="
+    display:none;
+    background: #eef3ff;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 20px;
+">
+    <h3>🧠 AI Answer</h3>
+    <p id="aiText">Loading AI answer...</p>
+    <p id="aiText"></p>
+</div>
 
     <div class="results" id="results"></div>
 </div>
@@ -551,6 +665,164 @@ document.getElementById("searchInput").addEventListener("keypress", function(e) 
 });
 
 showHistory();
+
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+function startVoice() {
+    recognition.start();
+}
+
+recognition.onresult = function(event) {
+    const text = event.results[0][0].transcript;
+
+    // Set text in input
+    document.getElementById("searchInput").value = text;
+
+    // 🔥 AUTO SEARCH
+    manualSearch();
+
+    if (transcript.includes("images")) {
+    fetch(`/api/search?q=${query}&type=images`)
+}
+else if (transcript.includes("videos")) {
+    fetch(`/api/search?q=${query}&type=videos`)
+}
+};
+
+function startVoice() {
+    const input = document.getElementById("searchInput");
+    input.placeholder = "Listening...";
+    document.getElementById("micBtn").classList.add("listening");
+
+    recognition.start();
+}
+
+recognition.onend = function() {
+    document.getElementById("micBtn").classList.remove("listening");
+    document.getElementById("searchInput").placeholder = "Search...";
+};
+
+function speak(text) {
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-IN";
+    speech.rate = 1;      // speed (0.5 slow, 1 normal)
+    speech.pitch = 1;     // tone
+    speech.volume = 1;    // volume
+
+    window.speechSynthesis.cancel(); // stop previous speech
+    window.speechSynthesis.speak(speech);
+}
+
+
+
+function search() {
+    const query = document.getElementById("searchInput").value;
+
+    fetch("http://127.0.0.1:5000/search", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ query })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const resultsList = document.getElementById("results");
+        resultsList.innerHTML = "";
+
+        data.results.forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            resultsList.appendChild(li);
+        });
+    });
+}
+
+function manualSearch() {
+    const query = document.getElementById("searchInput").value;
+    if (!query) return;
+
+    document.getElementById("spinner").style.display = "block";
+
+    // 🔥 AI SUMMARY CALL
+    fetch(`/api/ai-summary?q=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("aiBox").style.display = "block";
+        document.getElementById("aiText").innerText = data.answer;
+    });
+
+    // 🔍 NORMAL SEARCH
+    document.getElementById("aiBox").style.display = "block";
+document.getElementById("aiText").innerText = "⏳ Generating AI answer...";
+    fetch(`/api/search?q=${query}&type=${currentType}`)
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+
+        if (currentType === "images") {
+            html += `<div class="image-grid">`;
+            data.forEach(item => {
+                html += `<div class="img-card"><img src="${item.image}"></div>`;
+            });
+            html += `</div>`;
+        }
+        else if (currentType === "videos") {
+            html += `<div class="video-grid">`;
+            data.forEach(item => {
+                html += `
+                    <div class="video-card">
+                        <div class="video-thumb">
+                            <img src="${item.thumbnail}" />
+                            <div class="play-btn">▶</div>
+                        </div>
+                        <a href="${item.url}" target="_blank">${item.title}</a>
+                        <p>${item.content || ""}</p>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+        else {
+            data.forEach(item => {
+                html += `
+                    <div class="result">
+                        <a href="${item.url}" target="_blank">${item.title}</a>
+                        <p>${item.content || ""}</p>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById("results").innerHTML = html;
+        document.getElementById("spinner").style.display = "none";
+    });
+
+    document.getElementById("suggestions").innerHTML = "";
+    saveHistory(query);
+}
+
+document.getElementById("aiText").innerHTML = `
+    <div class="ai-loading">
+        <div class="ai-spinner"></div>
+        Generating AI answer...
+    </div>
+`;
+
+function toggleMenu() {
+    const menu = document.getElementById("menuDropdown");
+    menu.style.display = (menu.style.display === "block") ? "none" : "block";
+}
+
+// Close when clicking outside
+document.addEventListener("click", function(e) {
+    const menu = document.getElementById("menuDropdown");
+    const hamburger = document.querySelector(".hamburger");
+
+    if (!hamburger.contains(e.target) && !menu.contains(e.target)) {
+        menu.style.display = "none";
+    }
+});
 </script>
 
 </body>
